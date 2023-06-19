@@ -1,0 +1,142 @@
+package Graph;
+
+import java.awt.*;
+import java.util.*;
+import java.util.List;
+
+public class Graph {
+
+    private final List<List<Integer>> adjacencyList;
+    private final Map<List<Integer>, Integer> weights;
+    private final List<Point> vertexCoordinates;
+    private final int infinity;
+
+
+    public Graph(List<List<Integer>> adjacencyList, Map<List<Integer>, Integer> weights, List<Point> vertexCoordinates, int MAX_WEIGHT) {
+        this.adjacencyList = adjacencyList;
+        this.weights = weights;
+        this.vertexCoordinates = vertexCoordinates;
+        infinity = adjacencyList.size() * MAX_WEIGHT + 1;
+    }
+
+    public List<List<Integer>> getAdjacencyList() {
+        return adjacencyList;
+    }
+
+    public int getInfinity() {
+        return infinity;
+    }
+
+    public Integer getWeight(int vert_1, int vert_2) {
+        if (vert_1 == vert_2) return 0;
+        List<Integer> tempList = new ArrayList<>();
+        tempList.add(Math.min(vert_1, vert_2));
+        tempList.add(Math.max(vert_1, vert_2));
+        return weights.get(tempList);
+    }
+
+    public void setWeight(int vert_1, int vert_2, int weight) {
+        List<Integer> tempList = new ArrayList<>();
+        tempList.add(Math.min(vert_1, vert_2));
+        tempList.add(Math.max(vert_1, vert_2));
+        weights.put(tempList, weight);
+    }
+
+    public List<Point> getVertexCoordinates() {
+        return vertexCoordinates;
+    }
+
+    private boolean DFSfindCycle(int v, int w, Stack<Integer> S, boolean[] visited) {
+        visited[w] = true;
+        for (int u : adjacencyList.get(w)) {
+            if (u != S.peek()) {
+                S.push(w);
+                if (u == v) return true;
+                if (!visited[u] && DFSfindCycle(v, u, S, visited)) return true;
+                S.pop();
+            }
+        }
+        return false;
+    } // graph, v, w, S, visited
+
+    public List<List<Integer>> findAllCycles() {
+        int n = adjacencyList.size();
+        boolean[] visited = new boolean[n];
+        Stack<Integer> S = new Stack<>();
+        List<List<Integer>> cycles = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            cycles.add(new ArrayList<>());
+            Arrays.fill(visited, false);
+            S.push(-1);
+            if (!DFSfindCycle(i, i, S, visited))
+                S.pop();
+            else {
+                cycles.get(i).add(i);
+                while (!S.isEmpty()) {
+                    int u = S.pop();
+                    if (u > -1)
+                        cycles.get(i).add(u);
+                }
+            }
+        }
+
+//        List<List<Integer>> tempCycles = new ArrayList<>();
+//        for (List<Integer> cycle : cycles) tempCycles.add(new ArrayList<>(cycle));
+//        for (List<Integer> cycle : tempCycles) cycle.sort(null);
+//        for (int i = 0; i < tempCycles.size(); i++) {
+//            for (int j = 0; j < tempCycles.size(); j++) {
+//                if (i != j && tempCycles.get(i).equals(tempCycles.get(j))) {
+//                    tempCycles.remove(j);
+//                    cycles.remove(j);
+//                    j--;
+//                }
+//            }
+//        }
+
+        /*
+        //Sort cycles List:
+        ArrayListComparator comparator = new ArrayListComparator();
+        cycles.sort(comparator);
+        int cyclesSize = cycles.size();
+        for (int i = 0; i < cyclesSize; i++) {
+            if (i+1 < cyclesSize) {
+                if (cycles.get(i).size() == cycles.get(i+1).size()) {
+                    List<Integer> temp_1 = new ArrayList<>(cycles.get(i));
+                    List<Integer> temp_2 = new ArrayList<>(cycles.get(i+1));
+                    temp_1.sort(null);
+                    temp_2.sort(null);
+                    if (temp_1.equals(temp_2)) {
+                        cycles.remove(i+1);
+                        i--;
+                    }
+                }
+            }
+        }
+         */
+
+        return cycles;
+    }
+
+    private class ArrayListComparator implements Comparator<List<Integer>>   {
+
+        @Override
+        public int compare(List<Integer> o1, List<Integer> o2) {
+            return Integer.compare(weightSum(o1), weightSum(o2));
+        }
+
+        private int weightSum(List<Integer> cycle) {
+            int sum = 0;
+            int n = cycle.size();
+            for (int i = 0; i < n; i++) {
+                if (i+1 < n) {
+                    sum += getWeight(cycle.get(i), cycle.get(i+1));
+                }
+                else {
+                    sum += getWeight(cycle.get(i), cycle.get(0));
+                }
+            }
+            return sum;
+        }
+    }
+
+}
